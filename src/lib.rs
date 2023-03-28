@@ -152,3 +152,8 @@ impl Interval {
 pub fn now() -> time::Duration {
     time::Duration::from_millis(chrono::Local::now().timestamp_millis() as u64)
 }
+
+pub mod prelude {
+    pub use crate::{App, Geometry, Graphics, GTransform, Shape};
+    pub use glam::{self, vec2, Vec2};
+}
