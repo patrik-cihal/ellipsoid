@@ -1,0 +1,60 @@
+[package]
+name = "ellipsoid"
+version = "0.1.0"
+edition = "2021" 
+authors = ["Patrik Cihal <patrik.cihal1234@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger = "0.10.0"
+log = "0.4.17"
+winit = "0.28.1"
+cfg-if = "1"
+wgpu = "0.15"
+bytemuck = { version = "1.13.0", features = ["bytemuck_derive", "derive"] }
+anyhow = "1.0.69"
+egui_wgpu_backend = { version = "0.22.0", features = ["web"] }
+egui_winit_platform = { version = "0.18.0", features = ["webbrowser"] }
+egui = "0.21.0"
+epi = "0.17.0"
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8.5"
+serde = { version = "1.0.159", features = ["derive"] }
+chrono = "0.4.24"
+glam = "0.23.0"
+
+
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["png", "jpeg"]
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+futures = "0.3.26"
+tokio = { version="1.25.0", features=["rt-multi-thread",] }
+
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+console_log = "0.2.0"
+wgpu = { version = "0.15", features = ["webgl"]}
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.30"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+    "WebSocket",
+    "BinaryType",
+    "MessageEvent",
+    "ErrorEvent",
+    "Blob",
+    "FileReader",
+    "ProgressEvent",
+]}
