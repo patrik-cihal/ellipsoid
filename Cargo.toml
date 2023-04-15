@@ -1,6 +1,6 @@
 [package]
 name = "ellipsoid"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021" 
 authors = ["Patrik Cihal <patrik.cihal1234@gmail.com>"]
 license = "MIT"
@@ -60,3 +60,7 @@ web-sys = { version = "0.3", features = [
     "FileReader",
     "ProgressEvent",
 ]}
+
+[[example]]
+name = "pong"
+path = "exmamples/pong"

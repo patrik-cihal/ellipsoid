@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 async-std = "1.12.0"
 ellipsoid = {"path" = "../../"}
+rand = "0.8.5"

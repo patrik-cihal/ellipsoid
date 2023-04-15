@@ -156,4 +156,5 @@ pub fn now() -> time::Duration {
 pub mod prelude {
     pub use crate::{App, Geometry, Graphics, GTransform, Shape};
     pub use glam::{self, vec2, Vec2};
+    pub use winit::{self, event::WindowEvent};
 }
