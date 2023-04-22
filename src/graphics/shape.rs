@@ -66,11 +66,21 @@ impl Shape {
     }
 }
 
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct GTransform {
     pub center: Vec2,
     pub rotation: f32,
     pub scale: Vec2,
+}
+
+impl Default for GTransform {
+    fn default() -> Self {
+        Self {
+            center: Vec2::ZERO,
+            rotation: 0.,
+            scale: Vec2::ONE,
+        }
+    }
 }
 
 impl GTransform {
