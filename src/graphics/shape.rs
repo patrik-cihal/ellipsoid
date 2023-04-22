@@ -60,8 +60,7 @@ impl Shape {
     /// Rotation is after scale
     pub fn apply(mut self, gtransform: GTransform) -> Shape {
         for point in &mut self.points {
-            *point = Vec2::from_angle(gtransform.rotation).rotate(*point*gtransform.scale)
-                + gtransform.center;
+            *point = gtransform.transform(*point);
         }
         self
     }
@@ -118,6 +117,10 @@ impl GTransform {
     pub fn set_scale_y(mut self, scale_y: f32) -> Self {
         self.scale.y = scale_y;
         self
+    }
+    pub fn transform(&self, point: Vec2) -> Vec2 {
+        Vec2::from_angle(self.rotation).rotate(point*self.scale)
+            + self.center
     }
 }
 
