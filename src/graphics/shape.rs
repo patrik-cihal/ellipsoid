@@ -122,6 +122,9 @@ impl GTransform {
         Vec2::from_angle(self.rotation).rotate(point*self.scale)
             + self.center
     }
+    pub fn inv_transform(&self, point: Vec2) -> Vec2 {
+        Vec2::from_angle(-self.rotation).rotate(point - self.center)/self.scale
+    }
 }
 
 impl Into<(Vec<Vertex>, Vec<u32>)> for Shape {
