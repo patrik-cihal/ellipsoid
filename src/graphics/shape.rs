@@ -2,6 +2,7 @@ use glam::vec2;
 
 use super::*;
 
+#[derive(Clone)]
 pub struct Shape {
     pub points: Vec<Vec2>,
     color: Color,
