@@ -1,10 +1,11 @@
-use std::time;
+use std::{time, fmt::Display};
 
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder},
+    window::{WindowBuilder, Window},
 };
 pub use winit::event::WindowEvent;
 
@@ -12,12 +13,12 @@ pub use winit::event::WindowEvent;
 use wasm_bindgen::prelude::*;
 
 mod graphics;
-pub use graphics::{Geometry, Graphics, GTransform, Shape};
+pub use graphics::{Geometry, Graphics, GTransform, Shape, Textures};
 
-pub trait App {
-    fn new(graphics: Graphics) -> Self;
-    fn graphics(&self) -> &Graphics;
-    fn graphics_mut(&mut self) -> &mut Graphics;
+pub trait App<T: Textures> {
+    fn new(window: Window) -> Self;
+    fn graphics(&self) -> &Graphics<T>;
+    fn graphics_mut(&mut self) -> &mut Graphics<T>;
     fn input(&mut self, _event: &WindowEvent) -> bool {
         false
     }
@@ -26,11 +27,11 @@ pub trait App {
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
-pub async fn run<A: App + 'static>() {
+pub async fn run<T: Textures, A: App<T> + 'static>() {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(log::Level::Warn).expect("Could't initialize logger");
+            console_log::init_with_level(log::Level::Debug).expect("Could't initialize logger");
         } else {
             env_logger::init();
         }
@@ -58,7 +59,7 @@ pub async fn run<A: App + 'static>() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut app = A::new(Graphics::new(window).await);
+    let mut app = A::new(window);
 
     let mut last_update = now();
 

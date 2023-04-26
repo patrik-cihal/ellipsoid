@@ -1,6 +1,6 @@
 [package]
 name = "ellipsoid"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021" 
 authors = ["Patrik Cihal <patrik.cihal1234@gmail.com>"]
 license = "MIT"
@@ -25,6 +25,7 @@ rand = "0.8.5"
 serde = { version = "1.0.159", features = ["derive"] }
 chrono = "0.4.24"
 glam = "0.23.0"
+strum = { version = "0.24.1", features = ["derive"] }
 
 
 [dependencies.image]

@@ -1,9 +1,11 @@
 
+use std::{fmt::Display, marker::PhantomData};
+
 use glam::Vec2;
 
 use winit::{window::Window};
+use strum::{EnumIter, IntoEnumIterator};
 
-pub type Geometry = (Vec<Vertex>, Vec<u32>);
 
 mod shape;
 pub use shape::{GTransform, Shape};
@@ -14,36 +16,40 @@ mod color;
 pub use color::Color;
 
 const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
-    100 * std::mem::size_of::<Vertex>() as wgpu::BufferAddress;
+    100 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
 const INDEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
     300 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
 
+pub trait Textures: IntoEnumIterator+Display+Default+Into<u32>+Copy {}
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, Default, PartialEq)]
-pub struct Vertex {
-    position: [f32; 2],
-    color: [f32; 4],
+pub type Geometry<T> = (Vec<Vertex<T>>, Vec<u32>);
+
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct Vertex<T: Textures> {
+    position: Vec2,
+    texture: T
 }
 
-impl Vertex {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self { position: [x, y], color: [1.0, 1.0, 1.0, 1.0] }
-    }
-}
-
-impl Into<Vertex> for Vec2 {
-    fn into(self) -> Vertex {
+impl<T: Textures> Into<Vertex<T>> for Vec2 {
+    fn into(self) -> Vertex<T> {
         Vertex {
-            position: [self.x, self.y],
-            color: [1.0, 1.0, 1.0, 1.0],
+            position: self,
+            texture: T::default()
         }
     }
 }
 
-impl Vertex {
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Default)]
+pub struct VertexRaw {
+    position: [f32; 2],
+    texture_index: u32
+}
+
+impl VertexRaw {
     const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4];
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
 
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
@@ -52,6 +58,15 @@ impl Vertex {
             array_stride: mem::size_of::<Self>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &Self::ATTRIBS,
+        }
+    }
+}
+
+impl<T: Textures> Into<VertexRaw> for Vertex<T> {
+    fn into(self) -> VertexRaw {
+        VertexRaw {
+            position: [self.position.x, self.position.y],
+            texture_index: self.texture.into()
         }
     }
 }
@@ -65,7 +80,7 @@ fn align<T: Default + Clone>(v: &mut Vec<T>) {
 }
 
 
-pub struct Graphics {
+pub struct Graphics<T: Textures> {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub egui_platform: egui_winit_platform::Platform,
     surface: wgpu::Surface,
@@ -79,11 +94,11 @@ pub struct Graphics {
     window: Window,
     egui_rpass: egui_wgpu_backend::RenderPass,
     start_time: chrono::NaiveTime,
-    vertices: Vec<Vertex>,
+    vertices: Vec<Vertex<T>>,
     indices: Vec<u32>,
 }
 
-impl Graphics {
+impl<T: Textures> Graphics<T> {
     pub async fn new(window: Window) -> Self {
         let size = window.inner_size();
 
@@ -166,7 +181,7 @@ impl Graphics {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[Vertex::desc()],
+                buffers: &[VertexRaw::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -235,6 +250,10 @@ impl Graphics {
 
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
+        for texture in T::iter() {
+            println!("{}", texture.to_string());
+        }
+
         Self {
             surface,
             device,
@@ -254,7 +273,7 @@ impl Graphics {
         }
     }
 
-    pub fn add_geometry(&mut self, geometry: Geometry) {
+    pub fn add_geometry(&mut self, geometry: Geometry<T>) {
         let index_offset = self.vertices.len() as u32;
 
         let (vertices, indices) = geometry;
@@ -289,13 +308,15 @@ impl Graphics {
 
         self.num_indices = self.indices.len() as u32;
 
-        align(&mut self.indices);
-        align(&mut self.vertices);
+        let mut vertices_raw = std::mem::take(&mut self.vertices).into_iter().map(|x| x.into()).collect::<Vec<VertexRaw>>();
 
-        if self.vertex_buffer.size() < (self.vertices.len() * std::mem::size_of::<Vertex>()) as u64
+        align(&mut self.indices);
+        align(&mut vertices_raw);
+
+        if self.vertex_buffer.size() < (vertices_raw.len() * std::mem::size_of::<VertexRaw>()) as u64
         {
             let mut new_size = self.vertex_buffer.size();
-            while new_size < (self.vertices.len() * std::mem::size_of::<Vertex>()) as u64 {
+            while new_size < (self.vertices.len() * std::mem::size_of::<VertexRaw>()) as u64 {
                 new_size *= 2;
             }
             self.vertex_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -320,11 +341,10 @@ impl Graphics {
         }
 
         self.queue
-            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertices));
+            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices_raw));
         self.queue
             .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&self.indices));
 
-        self.vertices.clear();
         self.indices.clear();
     }
 

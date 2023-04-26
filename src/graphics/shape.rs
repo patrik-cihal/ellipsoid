@@ -3,18 +3,14 @@ use glam::vec2;
 use super::*;
 
 #[derive(Clone)]
-pub struct Shape {
+pub struct Shape<T: Textures> {
     pub points: Vec<Vec2>,
-    color: Color,
+    texture: T
 }
 
-impl Shape {
+impl<T: Textures> Shape<T> {
     pub fn new(points: Vec<Vec2>) -> Self {
-        Self { points, color: Color::WHITE }
-    }
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = color;
-        self
+        Self { points, texture: Default::default() }
     }
     pub fn from_circle(segments: usize) -> Self {
         let mut points = Vec::with_capacity(segments);
@@ -58,10 +54,15 @@ impl Shape {
     }
 
     /// Rotation is after scale
-    pub fn apply(mut self, gtransform: GTransform) -> Shape {
+    pub fn apply(mut self, gtransform: GTransform) -> Shape<T> {
         for point in &mut self.points {
             *point = gtransform.transform(*point);
         }
+        self
+    }
+
+    pub fn set_texture(mut self, t: T) -> Self {
+        self.texture = t;
         self
     }
 }
@@ -137,9 +138,9 @@ impl GTransform {
     }
 }
 
-impl Into<(Vec<Vertex>, Vec<u32>)> for Shape {
-    fn into(self) -> (Vec<Vertex>, Vec<u32>) {
-        let mut vertices: Vec<Vertex> = vec![self.points[0].into(), self.points[1].into()];
+impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
+    fn into(self) -> (Vec<Vertex<T>>, Vec<u32>) {
+        let mut vertices: Vec<Vertex<T>> = vec![self.points[0].into(), self.points[1].into()];
         let mut indices = vec![];
 
         for i in 2..self.points.len() {
@@ -150,7 +151,7 @@ impl Into<(Vec<Vertex>, Vec<u32>)> for Shape {
         }
         
         for vertex in &mut vertices {
-            vertex.color = self.color.into();
+            vertex.texture = self.texture;
         }
 
         (vertices, indices)
