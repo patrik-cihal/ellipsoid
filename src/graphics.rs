@@ -1,18 +1,14 @@
-
-use std::{fmt::Display, marker::PhantomData};
+use std::{fmt::Display, marker::PhantomData, num::NonZeroU32, path::Path};
 
 use glam::Vec2;
 
-use winit::{window::Window};
 use strum::{EnumIter, IntoEnumIterator};
-
+use winit::window::Window;
 
 mod shape;
 pub use shape::{GTransform, Shape};
 
-mod texture;
-
-mod color; 
+mod color;
 pub use color::Color;
 
 const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
@@ -20,22 +16,30 @@ const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
 const INDEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
     300 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
 
-pub trait Textures: IntoEnumIterator+Display+Default+Into<u32>+Copy {}
+pub trait Textures: IntoEnumIterator + Display + Default + Into<u32> + Copy {
+    fn name(&self) -> String {
+        self.to_string()
+    }
+    fn extension(&self) -> image::ImageFormat {
+        image::ImageFormat::Png
+    }
+}
 
 pub type Geometry<T> = (Vec<Vertex<T>>, Vec<u32>);
-
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Vertex<T: Textures> {
     position: Vec2,
-    texture: T
+    texture: T,
+    texture_coords: Vec2,
 }
 
-impl<T: Textures> Into<Vertex<T>> for Vec2 {
+impl<T: Textures> Into<Vertex<T>> for (Vec2, Vec2) {
     fn into(self) -> Vertex<T> {
         Vertex {
-            position: self,
-            texture: T::default()
+            position: self.0,
+            texture: T::default(),
+            texture_coords: self.1,
         }
     }
 }
@@ -44,12 +48,13 @@ impl<T: Textures> Into<Vertex<T>> for Vec2 {
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Default)]
 pub struct VertexRaw {
     position: [f32; 2],
-    texture_index: u32
+    texture_index: u32,
+    texture_coords: [f32; 2],
 }
 
 impl VertexRaw {
-    const ATTRIBS: [wgpu::VertexAttribute; 2] =
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
+    const ATTRIBS: [wgpu::VertexAttribute; 3] =
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32, 2 => Float32x2];
 
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
@@ -66,7 +71,8 @@ impl<T: Textures> Into<VertexRaw> for Vertex<T> {
     fn into(self) -> VertexRaw {
         VertexRaw {
             position: [self.position.x, self.position.y],
-            texture_index: self.texture.into()
+            texture_index: self.texture.into(),
+            texture_coords: [self.texture_coords.x, self.texture_coords.y],
         }
     }
 }
@@ -78,7 +84,6 @@ fn align<T: Default + Clone>(v: &mut Vec<T>) {
         v.extend(std::iter::repeat(T::default()).take(4 - rem));
     }
 }
-
 
 pub struct Graphics<T: Textures> {
     pub size: winit::dpi::PhysicalSize<u32>,
@@ -96,6 +101,8 @@ pub struct Graphics<T: Textures> {
     start_time: chrono::NaiveTime,
     vertices: Vec<Vertex<T>>,
     indices: Vec<u32>,
+    texture_views: Vec<wgpu::TextureView>,
+    textures_bind_group: wgpu::BindGroup,
 }
 
 impl<T: Textures> Graphics<T> {
@@ -127,7 +134,7 @@ impl<T: Textures> Graphics<T> {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: wgpu::Features::empty(),
+                    features: wgpu::Features::TEXTURE_BINDING_ARRAY | wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
                     // WebGL doesn't support all of wgpu's features, so if
                     // we're building for the web we'll have to disable some.
                     limits: if cfg!(target_arch = "wasm32") {
@@ -163,10 +170,132 @@ impl<T: Textures> Graphics<T> {
         };
         surface.configure(&device, &config);
 
+        let texture_views = T::iter()
+            .enumerate()
+            .map(|(i, texture)| {
+                let mut ext = None;
+                for new_ext in texture.extension().extensions_str() {
+                    let path = Path::new("assets/textures").join(format!("{}.{}", texture.name(), new_ext));
+                    if path.exists() {
+                        ext = Some(new_ext);
+                        break;
+                    }
+                }
+                let Some(ext) = ext else {
+                    panic!("Texture {} not found", texture);
+                };
+
+                let path = Path::new("assets/textures").join(format!("{}.{}", texture.name(), ext));
+
+                let image_bytes = std::fs::read(path).unwrap();
+                let diffuse_image = image::load_from_memory_with_format(&image_bytes, texture.extension()).unwrap();
+
+                use image::GenericImageView;
+                let dimensions = diffuse_image.dimensions();
+
+                let texture_size = wgpu::Extent3d {
+                    width: dimensions.0,
+                    height: dimensions.1,
+                    depth_or_array_layers: 1,
+                };
+
+                let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+
+                let diffuse_texture = device.create_texture(&wgpu::TextureDescriptor {
+                    size: texture_size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+                    label: Some(format!("diffuse_texture_{}", i).as_str()),
+                    view_formats: &[],
+                });
+
+                let diffuse_rgba = match diffuse_image {
+                    image::DynamicImage::ImageRgba8(rgba_image) => rgba_image.into_raw(),
+                    image::DynamicImage::ImageRgb8(rgb_image) => {
+                        let (width, height) = rgb_image.dimensions();
+                        let mut rgba_data = Vec::with_capacity((width * height * 4) as usize);
+
+                        for pixel in rgb_image.into_raw().chunks_exact(3) {
+                            rgba_data.extend_from_slice(&pixel);
+                            rgba_data.push(255); // Add an opaque alpha channel
+                        }
+
+                        rgba_data
+                    }
+                    _ => panic!("Unsupported image format"),
+                };
+
+                let bytes_per_pixel = format.describe().block_size as u32;
+                let bytes_per_row = dimensions.0 * bytes_per_pixel;
+
+                queue.write_texture(
+                    wgpu::ImageCopyTexture {
+                        texture: &diffuse_texture,
+                        mip_level: 0,
+                        origin: wgpu::Origin3d::ZERO,
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    &diffuse_rgba,
+                    wgpu::ImageDataLayout {
+                        offset: 0,
+                        bytes_per_row: std::num::NonZeroU32::new(bytes_per_row),
+                        rows_per_image: std::num::NonZeroU32::new(dimensions.1),
+                    },
+                    texture_size,
+                );
+
+                diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default())
+            })
+            .collect::<Vec<_>>();
+
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("texture_bind_group_layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: NonZeroU32::new(texture_views.len() as u32),
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+
+        let texture_views_ref = texture_views.iter().collect::<Vec<_>>();
+        let textures_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureViewArray(&texture_views_ref),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+            ],
+            layout: &texture_bind_group_layout,
+            label: Some("texture_bind_group"),
+        });
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&texture_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -250,10 +379,6 @@ impl<T: Textures> Graphics<T> {
 
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
-        for texture in T::iter() {
-            println!("{}", texture.to_string());
-        }
-
         Self {
             surface,
             device,
@@ -270,6 +395,8 @@ impl<T: Textures> Graphics<T> {
             start_time: chrono::Local::now().time(),
             vertices: vec![],
             indices: vec![],
+            textures_bind_group,
+            texture_views,
         }
     }
 
@@ -308,12 +435,16 @@ impl<T: Textures> Graphics<T> {
 
         self.num_indices = self.indices.len() as u32;
 
-        let mut vertices_raw = std::mem::take(&mut self.vertices).into_iter().map(|x| x.into()).collect::<Vec<VertexRaw>>();
+        let mut vertices_raw = std::mem::take(&mut self.vertices)
+            .into_iter()
+            .map(|x| x.into())
+            .collect::<Vec<VertexRaw>>();
 
         align(&mut self.indices);
         align(&mut vertices_raw);
 
-        if self.vertex_buffer.size() < (vertices_raw.len() * std::mem::size_of::<VertexRaw>()) as u64
+        if self.vertex_buffer.size()
+            < (vertices_raw.len() * std::mem::size_of::<VertexRaw>()) as u64
         {
             let mut new_size = self.vertex_buffer.size();
             while new_size < (self.vertices.len() * std::mem::size_of::<VertexRaw>()) as u64 {
@@ -383,8 +514,12 @@ impl<T: Textures> Graphics<T> {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
+
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+
+            render_pass.set_bind_group(0, &self.textures_bind_group, &[]);
+
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
 

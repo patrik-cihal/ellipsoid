@@ -4,14 +4,19 @@ use super::*;
 
 #[derive(Clone)]
 pub struct Shape<T: Textures> {
-    pub points: Vec<Vec2>,
-    texture: T
+    pub points: Vec<(Vec2, Vec2)>,
+    texture: T,
 }
 
 impl<T: Textures> Shape<T> {
     pub fn new(points: Vec<Vec2>) -> Self {
-        Self { points, texture: Default::default() }
+        Self {
+            points: points.into_iter().map(|p| (p, Vec2::ZERO)).collect(),
+            texture: Default::default(),
+        }
+        .update_texture_coords()
     }
+
     pub fn from_circle(segments: usize) -> Self {
         let mut points = Vec::with_capacity(segments);
         for i in 0..segments {
@@ -21,27 +26,23 @@ impl<T: Textures> Shape<T> {
         Self::new(points)
     }
     pub fn from_square() -> Self {
-        Self::new(
-            vec![
-                Vec2::new(0., 0.),
-                Vec2::new(1., 0.),
-                Vec2::new(1., 1.),
-                Vec2::new(0., 1.),
-            ],
-        )
+        Self::new(vec![
+            Vec2::new(0., 0.),
+            Vec2::new(1., 0.),
+            Vec2::new(1., 1.),
+            Vec2::new(0., 1.),
+        ])
     }
     pub fn from_triangle() -> Self {
-        Self::new(
-            vec![vec2(0., 0.5), vec2(-0.5, -0.5), vec2(0.5, -0.5)],
-        )
+        Self::new(vec![vec2(0., 0.5), vec2(-0.5, -0.5), vec2(0.5, -0.5)])
     }
     pub fn from_line(length: f32, thickness: f32) -> Self {
         let square = Self::from_square();
         // length += thickness;
 
-        let gtransform = GTransform::from_translation(-Vec2::Y/2. * thickness)
+        let gtransform = GTransform::from_translation(-Vec2::Y / 2. * thickness)
             .stretch(vec2(length, thickness));
-            
+
         square.apply(gtransform)
     }
     pub fn from_polygon(sides: usize) -> Self {
@@ -55,9 +56,26 @@ impl<T: Textures> Shape<T> {
 
     /// Rotation is after scale
     pub fn apply(mut self, gtransform: GTransform) -> Shape<T> {
-        for point in &mut self.points {
+        for (point, _) in &mut self.points {
             *point = gtransform.transform(*point);
         }
+        self
+    }
+
+    pub fn update_texture_coords(mut self) -> Self {
+        let mut left_upper_point = Vec2::new(std::f32::MAX, std::f32::MAX);
+        let mut right_lower_point = Vec2::new(std::f32::MIN, std::f32::MIN);
+
+        for (point, _) in &self.points {
+            left_upper_point = left_upper_point.min(*point);
+            right_lower_point = right_lower_point.max(*point);
+        }
+
+        for (point, tex_coord) in &mut self.points {
+            *tex_coord =
+                (*point - left_upper_point) / (right_lower_point - left_upper_point).length();
+        }
+
         self
     }
 
@@ -92,13 +110,16 @@ impl GTransform {
         }
     }
     pub fn from_scale(scale: Vec2) -> Self {
-        Self { scale, ..Default::default() }
+        Self {
+            scale,
+            ..Default::default()
+        }
     }
     pub fn from_translation(translation: Vec2) -> Self {
         Self {
             center: translation,
             scale: Vec2::ONE,
-            rotation: 0.
+            rotation: 0.,
         }
     }
     pub fn inflate(mut self, mp: f32) -> Self {
@@ -130,11 +151,10 @@ impl GTransform {
         self
     }
     pub fn transform(&self, point: Vec2) -> Vec2 {
-        Vec2::from_angle(self.rotation).rotate(point*self.scale)
-            + self.center
+        Vec2::from_angle(self.rotation).rotate(point * self.scale) + self.center
     }
     pub fn inv_transform(&self, point: Vec2) -> Vec2 {
-        Vec2::from_angle(-self.rotation).rotate(point - self.center)/self.scale
+        Vec2::from_angle(-self.rotation).rotate(point - self.center) / self.scale
     }
 }
 
@@ -149,7 +169,7 @@ impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
             indices.push(i as u32 - 1);
             indices.push(i as u32);
         }
-        
+
         for vertex in &mut vertices {
             vertex.texture = self.texture;
         }

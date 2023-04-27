@@ -1,22 +1,24 @@
-use std::{time, fmt::Display};
+use std::{fmt::Display, time};
 
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
+pub use winit::event::WindowEvent;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder, Window},
+    window::{Window, WindowBuilder},
 };
-pub use winit::event::WindowEvent;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 mod graphics;
-pub use graphics::{Geometry, Graphics, GTransform, Shape, Textures};
+pub use graphics::{GTransform, Geometry, Graphics, Shape, Textures};
 
+#[async_trait]
 pub trait App<T: Textures> {
-    fn new(window: Window) -> Self;
+    async fn new(window: Window) -> Self;
     fn graphics(&self) -> &Graphics<T>;
     fn graphics_mut(&mut self) -> &mut Graphics<T>;
     fn input(&mut self, _event: &WindowEvent) -> bool {
@@ -59,7 +61,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut app = A::new(window);
+    let mut app = A::new(window).await;
 
     let mut last_update = now();
 
@@ -95,7 +97,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             }
             Event::RedrawRequested(window_id) if window_id == app.graphics().window().id() => {
                 let now = now();
-                let dt = (now-last_update).as_secs_f32();
+                let dt = (now - last_update).as_secs_f32();
                 last_update = now;
 
                 app.graphics_mut().update();
@@ -125,7 +127,6 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
     });
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub struct Interval {
     last: time::Duration,
@@ -140,8 +141,8 @@ impl Interval {
         }
     }
     pub fn check(&mut self) -> bool {
-        let now  = now();
-        if now-self.last > self.interval {
+        let now = now();
+        if now - self.last > self.interval {
             self.last = now;
             true
         } else {
@@ -155,7 +156,9 @@ pub fn now() -> time::Duration {
 }
 
 pub mod prelude {
-    pub use crate::{App, Geometry, Graphics, GTransform, Shape};
+    pub use crate::{App, GTransform, Geometry, Graphics, Shape, Textures};
+    pub use async_trait::async_trait;
     pub use glam::{self, vec2, Vec2};
     pub use winit::{self, event::WindowEvent};
+    pub use image::ImageFormat;
 }
