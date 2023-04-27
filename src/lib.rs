@@ -1,4 +1,4 @@
-use std::{fmt::Display, time};
+use std::{fmt::Display, time, sync::Arc};
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -16,9 +16,8 @@ use wasm_bindgen::prelude::*;
 mod graphics;
 pub use graphics::{GTransform, Geometry, Graphics, Shape, Textures};
 
-#[async_trait]
 pub trait App<T: Textures> {
-    async fn new(window: Window) -> Self;
+    fn new(graphics: Graphics<T>) -> Self;
     fn graphics(&self) -> &Graphics<T>;
     fn graphics_mut(&mut self) -> &mut Graphics<T>;
     fn input(&mut self, _event: &WindowEvent) -> bool {
@@ -28,7 +27,6 @@ pub trait App<T: Textures> {
     fn draw(&mut self);
 }
 
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn run<T: Textures, A: App<T> + 'static>() {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -53,7 +51,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
         web_sys::window()
             .and_then(|win| win.document())
             .and_then(|doc| {
-                let dst = doc.get_element_by_id("spacecraft")?;
+                let dst = doc.get_element_by_id("ellipsoid-container")?;
                 let canvas = web_sys::Element::from(window.canvas());
                 dst.append_child(&canvas).ok()?;
                 Some(())
@@ -61,7 +59,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut app = A::new(window).await;
+    let mut app = A::new(Graphics::new(window).await);
 
     let mut last_update = now();
 
