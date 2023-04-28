@@ -12,9 +12,9 @@ mod color;
 pub use color::Color;
 
 const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
-    100 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
+    10000 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
 const INDEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
-    300 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
+    3000 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
 
 pub trait Textures: IntoEnumIterator + Display + Default + Into<u32> + Copy {
     fn name(&self) -> String {
