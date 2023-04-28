@@ -30,12 +30,11 @@ var text_sampler: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var color: vec3<f32>;
-    color = textureSampleLevel(
+    var color: vec4<f32>;
+    color = textureSample(
         texture_array[in.index],
         text_sampler,
         in.tex_coord,
-        0.0
     ).rgb;
-    return vec4<f32>(color, 1.0);
+    return color;
 }
