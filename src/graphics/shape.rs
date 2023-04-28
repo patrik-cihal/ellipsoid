@@ -63,17 +63,17 @@ impl<T: Textures> Shape<T> {
     }
 
     pub fn update_texture_coords(mut self) -> Self {
-        let mut left_upper_point = Vec2::new(std::f32::MAX, std::f32::MAX);
-        let mut right_lower_point = Vec2::new(std::f32::MIN, std::f32::MIN);
+        let mut left_lower_point = Vec2::new(std::f32::MAX, std::f32::MAX);
+        let mut right_upper_point = Vec2::new(std::f32::MIN, std::f32::MIN);
 
         for (point, _) in &self.points {
-            left_upper_point = left_upper_point.min(*point);
-            right_lower_point = right_lower_point.max(*point);
+            left_lower_point = left_lower_point.min(*point);
+            right_upper_point = right_upper_point.max(*point);
         }
 
         for (point, tex_coord) in &mut self.points {
             *tex_coord =
-                (*point - left_upper_point) / (right_lower_point - left_upper_point).length();
+                (*point - left_lower_point) / (right_upper_point - left_lower_point);
         }
 
         self
