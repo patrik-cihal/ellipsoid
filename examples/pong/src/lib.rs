@@ -1,3 +1,5 @@
+#![feature(async_fn_in_trait)]
+
 use ellipsoid::prelude::{winit::window::Window, *};
 #[cfg(target_arch="wasm32")]
 use wasm_bindgen::prelude::*;
@@ -47,7 +49,8 @@ struct PongGame {
 }
 
 impl App<PongTextures> for PongGame {
-    fn new(graphics: Graphics<PongTextures>) -> Self {
+    async fn new(window: Window) -> Self {
+        let graphics = Graphics::<PongTextures>::new(window).await;
         Self {
             graphics,
             player_pos: 0.,

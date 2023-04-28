@@ -1,3 +1,5 @@
+#![feature(async_fn_in_trait)]
+
 use std::{fmt::Display, time, sync::Arc};
 
 use async_trait::async_trait;
@@ -17,7 +19,7 @@ mod graphics;
 pub use graphics::{GTransform, Geometry, Graphics, Shape, Textures};
 
 pub trait App<T: Textures> {
-    fn new(graphics: Graphics<T>) -> Self;
+    async fn new(window: Window) -> Self;
     fn graphics(&self) -> &Graphics<T>;
     fn graphics_mut(&mut self) -> &mut Graphics<T>;
     fn input(&mut self, _event: &WindowEvent) -> bool {
@@ -59,7 +61,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut app = A::new(Graphics::new(window).await);
+    let mut app = A::new(window).await;
 
     let mut last_update = now();
 
