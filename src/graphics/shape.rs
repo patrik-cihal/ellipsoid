@@ -2,7 +2,7 @@ use glam::vec2;
 
 use super::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Shape<T: Textures> {
     pub points: Vec<(Vec2, Vec2)>,
     texture: T,
