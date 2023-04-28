@@ -35,6 +35,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         texture_array[in.index],
         text_sampler,
         in.tex_coord,
-    ).rgb;
+    );
     return color;
 }
