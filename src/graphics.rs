@@ -12,9 +12,9 @@ mod color;
 pub use color::Color;
 
 const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
-    10000 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
+    1000 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
 const INDEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
-    3000 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
+    300 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
 
 pub trait Textures: IntoEnumIterator + Display + Default + Into<u32> + Copy {
     fn name(&self) -> String {
@@ -447,7 +447,7 @@ impl<T: Textures> Graphics<T> {
             < (vertices_raw.len() * std::mem::size_of::<VertexRaw>()) as u64
         {
             let mut new_size = self.vertex_buffer.size();
-            while new_size < (self.vertices.len() * std::mem::size_of::<VertexRaw>()) as u64 {
+            while new_size < (vertices_raw.len() * std::mem::size_of::<VertexRaw>()) as u64 {
                 new_size *= 2;
             }
             self.vertex_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
