@@ -1,4 +1,4 @@
-use glam::vec2;
+use glam::{vec2, vec3};
 
 use super::*;
 
@@ -6,6 +6,8 @@ use super::*;
 pub struct Shape<T: Textures> {
     pub points: Vec<(Vec2, Vec2)>,
     texture: T,
+    color: Color,
+    z: f32
 }
 
 impl<T: Textures> Shape<T> {
@@ -13,6 +15,8 @@ impl<T: Textures> Shape<T> {
         Self {
             points: points.into_iter().map(|p| (p, Vec2::ZERO)).collect(),
             texture: Default::default(),
+            color: Color::WHITE,
+            z: 0.
         }
         .update_texture_coords()
     }
@@ -81,6 +85,16 @@ impl<T: Textures> Shape<T> {
 
     pub fn set_texture(mut self, t: T) -> Self {
         self.texture = t;
+        self
+    }
+
+    pub fn set_color(mut self, c: Color) -> Self {
+        self.color = c;
+        self
+    }
+
+    pub fn set_z(mut self, z: f32) -> Self {
+        self.z = z;
         self
     }
 }
@@ -160,11 +174,12 @@ impl GTransform {
 
 impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
     fn into(self) -> (Vec<Vertex<T>>, Vec<u32>) {
-        let mut vertices: Vec<Vertex<T>> = vec![self.points[0].into(), self.points[1].into()];
+        let points = self.points.into_iter().map(|(p, tc)| (vec3(p.x, p.y, self.z), tc)).collect::<Vec<_>>();
+        let mut vertices: Vec<Vertex<T>> = vec![points[0].into(), points[1].into()];
         let mut indices = vec![];
 
-        for i in 2..self.points.len() {
-            vertices.push(self.points[i].into());
+        for i in 2..points.len() {
+            vertices.push(points[i].into());
             indices.push(0);
             indices.push(i as u32 - 1);
             indices.push(i as u32);
@@ -172,6 +187,7 @@ impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
 
         for vertex in &mut vertices {
             vertex.texture = self.texture;
+            vertex.color = self.color;
         }
 
         (vertices, indices)

@@ -1,4 +1,4 @@
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Color {
     pub r: f32,
     pub g: f32,

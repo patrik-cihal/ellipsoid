@@ -91,7 +91,7 @@ impl App<PongTextures> for PongGame {
         self.enemy_pos = self.ball.pos.y;
     }
     fn draw(&mut self) {
-        let player_shape = Shape::from_square().apply(
+        let player_shape = Shape::from_square().set_color(Color::GREEN).apply(
             GTransform::from_translation(vec2(-X_OFFSET, self.player_pos))
                 .stretch(vec2(RECT_WIDTH, RECT_HEIGHT))
                 .translate(vec2(-0.5, -0.5)),

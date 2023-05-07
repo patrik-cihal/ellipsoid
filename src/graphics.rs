@@ -1,6 +1,6 @@
 use std::{fmt::Display, marker::PhantomData, num::NonZeroU32, path::Path};
 
-use glam::Vec2;
+use glam::{Vec2, Vec3};
 
 use strum::{EnumIter, IntoEnumIterator};
 use winit::window::Window;
@@ -29,17 +29,19 @@ pub type Geometry<T> = (Vec<Vertex<T>>, Vec<u32>);
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Vertex<T: Textures> {
-    position: Vec2,
+    position: Vec3,
     texture: T,
     texture_coords: Vec2,
+    color: Color
 }
 
-impl<T: Textures> Into<Vertex<T>> for (Vec2, Vec2) {
+impl<T: Textures> Into<Vertex<T>> for (Vec3, Vec2) {
     fn into(self) -> Vertex<T> {
         Vertex {
             position: self.0,
             texture: T::default(),
             texture_coords: self.1,
+            color: Color::WHITE
         }
     }
 }
@@ -47,14 +49,15 @@ impl<T: Textures> Into<Vertex<T>> for (Vec2, Vec2) {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Default)]
 pub struct VertexRaw {
-    position: [f32; 2],
+    position: [f32; 3],
     texture_index: u32,
     texture_coords: [f32; 2],
+    color: [f32; 4]
 }
 
 impl VertexRaw {
-    const ATTRIBS: [wgpu::VertexAttribute; 3] =
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32, 2 => Float32x2];
+    const ATTRIBS: [wgpu::VertexAttribute; 4] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Uint32, 2 => Float32x2, 3 => Float32x4];
 
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
@@ -70,9 +73,10 @@ impl VertexRaw {
 impl<T: Textures> Into<VertexRaw> for Vertex<T> {
     fn into(self) -> VertexRaw {
         VertexRaw {
-            position: [self.position.x, self.position.y],
+            position: [self.position.x, self.position.y, self.position.z],
             texture_index: self.texture.into(),
             texture_coords: [self.texture_coords.x, self.texture_coords.y],
+            color: self.color.into()
         }
     }
 }
