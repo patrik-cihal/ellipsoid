@@ -74,16 +74,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             } if window_id == app.graphics().window().id() => {
                 if !app.input(event) {
                     match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => *control_flow = ControlFlow::Exit,
+                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                         WindowEvent::Resized(physical_size) => {
                             app.graphics_mut().resize(*physical_size);
                         }
