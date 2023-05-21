@@ -37,6 +37,14 @@ impl<T: Textures> Shape<T> {
             Vec2::new(0., 1.),
         ])
     }
+    pub fn from_square_centered() -> Self {
+        Self::new(vec![
+            Vec2::new(-0.5, -0.5),
+            Vec2::new(0.5, -0.5),
+            Vec2::new(0.5, 0.5),
+            Vec2::new(-0.5, 0.5),
+        ])
+    }
     pub fn from_triangle() -> Self {
         Self::new(vec![vec2(0., 0.5), vec2(-0.5, -0.5), vec2(0.5, -0.5)])
     }
