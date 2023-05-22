@@ -1,10 +1,8 @@
 #![feature(async_fn_in_trait)]
 
-use std::{fmt::Display, time, sync::Arc};
+use std::{time};
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use strum::IntoEnumIterator;
 pub use winit::event::WindowEvent;
 use winit::{
     event::*,

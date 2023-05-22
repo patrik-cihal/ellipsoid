@@ -4,6 +4,7 @@ use ellipsoid::prelude::{winit::window::Window, *};
 #[cfg(target_arch="wasm32")]
 use wasm_bindgen::prelude::*;
 
+
 use strum::{Display, EnumIter};
 
 const X_OFFSET: f32 = 0.9;

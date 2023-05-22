@@ -2,3 +2,5 @@
 Cargo.lock
 /examples/pong/target
 /examples/pong/Cargo.lock
+/examples/simple_app_readme/target
+/examples/simple_app_readme/Cargo.lock
