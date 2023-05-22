@@ -1,6 +1,6 @@
 #![feature(async_fn_in_trait)]
 
-use std::{time};
+use std::time;
 
 use serde::{Deserialize, Serialize};
 pub use winit::event::WindowEvent;
@@ -14,7 +14,7 @@ use winit::{
 use wasm_bindgen::prelude::*;
 
 mod graphics;
-pub use graphics::{GTransform, Geometry, Graphics, Shape, Textures, Color};
+pub use graphics::{Color, GTransform, Geometry, Graphics, Shape, Textures};
 
 pub trait App<T: Textures> {
     async fn new(window: Window) -> Self;
@@ -145,10 +145,10 @@ pub fn now() -> time::Duration {
 }
 
 pub mod prelude {
-    pub use crate::{App, GTransform, Geometry, Graphics, Shape, Textures, Color};
+    pub use crate::{App, Color, GTransform, Geometry, Graphics, Shape, Textures};
     pub use async_trait::async_trait;
-    pub use glam::{self, vec2, Vec2};
-    pub use winit::{self, event::WindowEvent};
-    pub use image::ImageFormat;
     pub use egui;
+    pub use glam::{self, vec2, Vec2};
+    pub use image::ImageFormat;
+    pub use winit::{self, event::WindowEvent};
 }

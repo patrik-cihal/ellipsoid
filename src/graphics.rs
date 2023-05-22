@@ -5,12 +5,11 @@ use glam::{Vec2, Vec3};
 use strum::{EnumIter, IntoEnumIterator};
 use winit::window::Window;
 
-mod shape;
 mod gtransform;
+mod shape;
 
-pub use shape::{Shape};
-pub use gtransform::{GTransform};
-
+pub use gtransform::GTransform;
+pub use shape::Shape;
 
 mod color;
 pub use color::Color;
@@ -36,7 +35,7 @@ pub struct Vertex<T: Textures> {
     position: Vec3,
     texture: T,
     texture_coords: Vec2,
-    color: Color
+    color: Color,
 }
 
 impl<T: Textures> Into<Vertex<T>> for (Vec3, Vec2) {
@@ -45,7 +44,7 @@ impl<T: Textures> Into<Vertex<T>> for (Vec3, Vec2) {
             position: self.0,
             texture: T::default(),
             texture_coords: self.1,
-            color: Color::WHITE
+            color: Color::WHITE,
         }
     }
 }
@@ -56,7 +55,7 @@ pub struct VertexRaw {
     position: [f32; 3],
     texture_index: u32,
     texture_coords: [f32; 2],
-    color: [f32; 4]
+    color: [f32; 4],
 }
 
 impl VertexRaw {
@@ -80,7 +79,7 @@ impl<T: Textures> Into<VertexRaw> for Vertex<T> {
             position: [self.position.x, self.position.y, self.position.z],
             texture_index: self.texture.into(),
             texture_coords: [self.texture_coords.x, self.texture_coords.y],
-            color: self.color.into()
+            color: self.color.into(),
         }
     }
 }
@@ -183,7 +182,11 @@ impl<T: Textures> Graphics<T> {
             .map(|(i, texture)| {
                 let mut ext = None;
                 for new_ext in texture.extension().extensions_str() {
-                    let path = Path::new("assets/textures").join(format!("{}.{}", texture.name(), new_ext));
+                    let path = Path::new("assets/textures").join(format!(
+                        "{}.{}",
+                        texture.name(),
+                        new_ext
+                    ));
                     if path.exists() {
                         ext = Some(new_ext);
                         break;
@@ -196,7 +199,8 @@ impl<T: Textures> Graphics<T> {
                 let path = Path::new("assets/textures").join(format!("{}.{}", texture.name(), ext));
 
                 let image_bytes = std::fs::read(path).unwrap();
-                let diffuse_image = image::load_from_memory_with_format(&image_bytes, texture.extension()).unwrap();
+                let diffuse_image =
+                    image::load_from_memory_with_format(&image_bytes, texture.extension()).unwrap();
 
                 use image::GenericImageView;
                 let dimensions = diffuse_image.dimensions();
@@ -219,7 +223,6 @@ impl<T: Textures> Graphics<T> {
                     label: Some(format!("diffuse_texture_{}", i).as_str()),
                     view_formats: &[],
                 });
-
 
                 let diffuse_rgba = diffuse_image.to_rgba8().into_raw();
 

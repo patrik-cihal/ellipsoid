@@ -7,7 +7,7 @@ pub struct Shape<T: Textures> {
     pub points: Vec<(Vec2, Vec2)>,
     texture: T,
     color: Color,
-    z: f32
+    z: f32,
 }
 
 impl<T: Textures> Shape<T> {
@@ -16,7 +16,7 @@ impl<T: Textures> Shape<T> {
             points: points.into_iter().map(|p| (p, Vec2::ZERO)).collect(),
             texture: Default::default(),
             color: Color::WHITE,
-            z: 0.
+            z: 0.,
         }
         .update_texture_coords()
     }
@@ -84,8 +84,7 @@ impl<T: Textures> Shape<T> {
         }
 
         for (point, tex_coord) in &mut self.points {
-            *tex_coord =
-                (*point - left_lower_point) / (right_upper_point - left_lower_point);
+            *tex_coord = (*point - left_lower_point) / (right_upper_point - left_lower_point);
         }
 
         self
@@ -109,7 +108,11 @@ impl<T: Textures> Shape<T> {
 
 impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
     fn into(self) -> (Vec<Vertex<T>>, Vec<u32>) {
-        let points = self.points.into_iter().map(|(p, tc)| (vec3(p.x, p.y, self.z), tc)).collect::<Vec<_>>();
+        let points = self
+            .points
+            .into_iter()
+            .map(|(p, tc)| (vec3(p.x, p.y, self.z), tc))
+            .collect::<Vec<_>>();
         let mut vertices: Vec<Vertex<T>> = vec![points[0].into(), points[1].into()];
         let mut indices = vec![];
 
