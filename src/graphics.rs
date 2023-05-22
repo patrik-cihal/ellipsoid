@@ -6,7 +6,11 @@ use strum::{EnumIter, IntoEnumIterator};
 use winit::window::Window;
 
 mod shape;
-pub use shape::{GTransform, Shape};
+mod gtransform;
+
+pub use shape::{Shape};
+pub use gtransform::{GTransform};
+
 
 mod color;
 pub use color::Color;
@@ -216,21 +220,8 @@ impl<T: Textures> Graphics<T> {
                     view_formats: &[],
                 });
 
-                let diffuse_rgba = match diffuse_image {
-                    image::DynamicImage::ImageRgba8(rgba_image) => rgba_image.into_raw(),
-                    image::DynamicImage::ImageRgb8(rgb_image) => {
-                        let (width, height) = rgb_image.dimensions();
-                        let mut rgba_data = Vec::with_capacity((width * height * 4) as usize);
 
-                        for pixel in rgb_image.into_raw().chunks_exact(3) {
-                            rgba_data.extend_from_slice(&pixel);
-                            rgba_data.push(255); // Add an opaque alpha channel
-                        }
-
-                        rgba_data
-                    }
-                    _ => panic!("Unsupported image format"),
-                };
+                let diffuse_rgba = diffuse_image.to_rgba8().into_raw();
 
                 let bytes_per_pixel = format.describe().block_size as u32;
                 let bytes_per_row = dimensions.0 * bytes_per_pixel;
