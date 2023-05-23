@@ -4,7 +4,7 @@ Ellipsoid is a Rust graphics library designed to create 2D games in a simple and
 
 Compared to other Rust frameworks like `ggez` or `macroquad`, `ellipsoid` shines in shape creation and manipulation. Additionally texture support is built in through `enums`, which ensures much safer access than for instance using `HashMap`.
 
-If you plan to build games in this framework you should expect, that you will hit a wall and at some point have to either make a fork or contribute to the project, since a some relevant features are still missing.
+If you plan to build games in this framework you should expect, that you will hit a wall and at some point have to either make a fork or contribute to the project, since some relevant features are still missing.
 
 ## Getting Started
 
@@ -55,10 +55,11 @@ Here's a minimal example for creating a simple window with a custom shape:
     #![feature(async_fn_in_trait)]
 
     use ellipsoid::prelude::*;
-    use strum::{EnumIter, Display};
+    use strum::{Display, EnumIter};
 
     struct MyApp {
         graphics: Graphics<MyTextures>,
+        rotation: f32,
     }
 
     #[derive(Debug, Clone, Copy, EnumIter, Display, Default)]
@@ -79,13 +80,20 @@ Here's a minimal example for creating a simple window with a custom shape:
     impl App<MyTextures> for MyApp {
         async fn new(window: winit::window::Window) -> Self {
             let graphics = Graphics::<MyTextures>::new(window).await;
-            MyApp { graphics }
+            MyApp {
+                graphics,
+                rotation: 0.,
+            }
         }
 
-        fn update(&mut self, _dt: f32) {}
+        fn update(&mut self, dt: f32) {
+            self.rotation += dt;
+        }
 
         fn draw(&mut self) {
-            let triangle = Shape::from_triangle().set_color(Color::GREEN);
+            let triangle = Shape::from_triangle()
+                .set_color(Color::GREEN)
+                .apply(GTransform::default().rotate(self.rotation));
             self.graphics.add_geometry(triangle.into());
         }
 
@@ -106,6 +114,7 @@ Here's a minimal example for creating a simple window with a custom shape:
     pub async fn start() {
         ellipsoid::run::<MyTextures, MyApp>().await;
     }
+
     ```
 
 2. `main.rs`
@@ -117,7 +126,7 @@ Here's a minimal example for creating a simple window with a custom shape:
     }
     ```
 3. Add default texture of choice to `assets/textures` (create directory in project root), for me white pixel usually does the trick
-4. Enjoy the nice green triangle: ![Simple App Screenshot](simple_app_readme_screenshot.png)
+4. Enjoy the nice rotating green triangle: ![Simple App Screenshot](simple_app_readme_screenshot.png)
 
 
 Please refer to the provided Pong game example for a more comprehensive demonstration of Ellipsoid's features and capabilities.

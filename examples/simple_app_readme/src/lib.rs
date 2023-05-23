@@ -1,10 +1,11 @@
 #![feature(async_fn_in_trait)]
 
 use ellipsoid::prelude::*;
-use strum::{EnumIter, Display};
+use strum::{Display, EnumIter};
 
 struct MyApp {
     graphics: Graphics<MyTextures>,
+    rotation: f32,
 }
 
 #[derive(Debug, Clone, Copy, EnumIter, Display, Default)]
@@ -25,13 +26,20 @@ impl Textures for MyTextures {}
 impl App<MyTextures> for MyApp {
     async fn new(window: winit::window::Window) -> Self {
         let graphics = Graphics::<MyTextures>::new(window).await;
-        MyApp { graphics }
+        MyApp {
+            graphics,
+            rotation: 0.,
+        }
     }
 
-    fn update(&mut self, _dt: f32) {}
+    fn update(&mut self, dt: f32) {
+        self.rotation += dt;
+    }
 
     fn draw(&mut self) {
-        let triangle = Shape::from_triangle().set_color(Color::GREEN);
+        let triangle = Shape::from_triangle()
+            .set_color(Color::GREEN)
+            .apply(GTransform::default().rotate(self.rotation));
         self.graphics.add_geometry(triangle.into());
     }
 
