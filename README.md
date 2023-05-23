@@ -4,7 +4,7 @@ Ellipsoid is a Rust graphics library designed to create 2D games in a simple and
 
 Compared to other Rust frameworks like `ggez` or `macroquad`, `ellipsoid` shines in shape creation and manipulation. Additionally texture support is built in through `enums`, which ensures much safer access than for instance using `HashMap`.
 
-If you plan to build games in this framework you should expect, that you will hit a wall and at some point have to either make a fork or contribute to the project, since a some relevant features are still missing.
+If you plan to build games in this framework you should expect, that you will hit a wall and at some point have to either make a fork or contribute to the project, since some relevant features are still missing.
 
 ## Getting Started
 
