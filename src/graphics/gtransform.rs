@@ -53,6 +53,10 @@ impl GTransform {
         self.scale.x *= scale_x;
         self
     }
+    pub fn stretch_fixed(mut self, size: Vec2) -> Self {
+        self.scale += size;
+        self
+    }
     pub fn rotate(mut self, radians: f32) -> Self {
         self.rotation += radians;
         self
@@ -63,6 +67,11 @@ impl GTransform {
     }
     pub fn translate(mut self, translation: Vec2) -> Self {
         self.center += Vec2::from_angle(self.rotation).rotate(translation) * self.scale;
+        self
+    }
+    /// Rotation is still applied tho
+    pub fn translate_fixed(mut self, translation: Vec2) -> Self {
+        self.center += Vec2::from_angle(self.rotation).rotate(translation);
         self
     }
     pub fn set_scale_y(mut self, scale_y: f32) -> Self {
