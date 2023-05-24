@@ -72,8 +72,7 @@ impl Color {
         let r = ((hex >> 16) & 0xFF) as f32 / 255.0;
         let g = ((hex >> 8) & 0xFF) as f32 / 255.0;
         let b = (hex & 0xFF) as f32 / 255.0;
-        let a = ((hex >> 24) & 0xFF) as f32 / 255.0;
-        Self { r, g, b, a }
+        Self { r, g, b, a: 1. }
     }
     pub const fn set_alpha(mut self, a: f32) -> Self {
         self.a = a;
