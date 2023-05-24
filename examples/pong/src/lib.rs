@@ -1,9 +1,8 @@
 #![feature(async_fn_in_trait)]
 
 use ellipsoid::prelude::{winit::window::Window, *};
-#[cfg(target_arch="wasm32")]
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-
 
 use strum::{Display, EnumIter};
 
@@ -65,7 +64,7 @@ impl App<PongTextures> for PongGame {
                 dir: vec2(rand::random(), rand::random()).normalize(),
             },
             up_pressed: false,
-            down_pressed: false
+            down_pressed: false,
         }
     }
     fn update(&mut self, dt: f32) {
@@ -110,27 +109,46 @@ impl App<PongTextures> for PongGame {
 
         let gt = GTransform::default(); //.stretch_x(aspect_ratio);
 
-        let background = Shape::from_square_centered().set_color(Color::from_rgb(0.05, 0.04, 0.05)).apply(GTransform::from_inflation(2.));
-        
-        let player_shape = Shape::from_square().set_texture(PongTextures::Paddle).apply(
-            gt.translate(vec2(-X_OFFSET, self.player_pos))
-                .stretch(vec2(RECT_WIDTH, RECT_HEIGHT))
-                .translate(vec2(-0.5, -0.5)),
-        );
-        let enemy_shape = Shape::from_square().set_texture(PongTextures::Paddle).apply(
-            gt.translate(vec2(X_OFFSET, self.enemy_pos))
-                .stretch(vec2(RECT_WIDTH, RECT_HEIGHT))
-                .translate(vec2(-0.5, -0.5)),
-        );
+        let background = Shape::from_square_centered()
+            .set_color(Color::from_rgb(0.05, 0.04, 0.05))
+            .apply(GTransform::from_inflation(2.))
+            .set_z(1.);
+
+        let player_gt = gt
+            .translate(vec2(-X_OFFSET, self.player_pos))
+            .stretch(vec2(RECT_WIDTH, RECT_HEIGHT));
+
+        let player_shape = Shape::from_square_centered()
+            .set_texture(PongTextures::Paddle)
+            .apply(player_gt)
+            .set_z(0.);
+        let player_shape_outline = Shape::from_square_centered()
+            .set_color(Color::BLUE)
+            .apply(player_gt.inflate_fixed(0.02))
+            .set_z(0.3);
+
+        let enemy_gt = gt
+            .translate(vec2(X_OFFSET, self.enemy_pos))
+            .stretch(vec2(RECT_WIDTH, RECT_HEIGHT));
+
+        let enemy_shape = Shape::from_square_centered()
+            .set_texture(PongTextures::Paddle)
+            .apply(enemy_gt)
+            .set_z(0.);
+        let enemy_shape_outline = Shape::from_square_centered()
+            .set_color(Color::RED)
+            .apply(enemy_gt.inflate_fixed(0.02))
+            .set_z(0.3);
 
         let ball_shape = Shape::from_circle(30)
             .apply(gt.translate(self.ball.pos).inflate(BALL_RADIUS))
             .set_texture(PongTextures::Ball);
 
-
         self.graphics.add_geometry(background.into());
         self.graphics.add_geometry(player_shape.into());
+        self.graphics.add_geometry(player_shape_outline.into());
         self.graphics.add_geometry(enemy_shape.into());
+        self.graphics.add_geometry(enemy_shape_outline.into());
         self.graphics.add_geometry(ball_shape.into());
     }
     fn input(&mut self, event: &WindowEvent) -> bool {
@@ -163,7 +181,6 @@ impl App<PongTextures> for PongGame {
         &self.graphics
     }
 }
-
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn start() {

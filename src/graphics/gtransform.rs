@@ -41,6 +41,10 @@ impl GTransform {
         self.scale *= mp;
         self
     }
+    pub fn inflate_fixed(mut self, dp: f32) -> Self {
+        self.scale += dp * Vec2::ONE;
+        self
+    }
     pub fn stretch(mut self, scale: Vec2) -> Self {
         self.scale *= scale;
         self

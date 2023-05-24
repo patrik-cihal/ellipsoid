@@ -110,6 +110,8 @@ pub struct Graphics<T: Textures> {
     indices: Vec<u32>,
     texture_views: Vec<wgpu::TextureView>,
     textures_bind_group: wgpu::BindGroup,
+    depth_texture: wgpu::Texture,
+    depth_texture_view: wgpu::TextureView,
 }
 
 impl<T: Textures> Graphics<T> {
@@ -302,6 +304,32 @@ impl<T: Textures> Graphics<T> {
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
+
+        let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("depth_texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth24PlusStencil8,
+            view_formats: &[],
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        });
+
+        let depth_texture_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let depth_stencil_state = wgpu::DepthStencilState {
+            format: wgpu::TextureFormat::Depth24PlusStencil8,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        };        
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
@@ -343,7 +371,7 @@ impl<T: Textures> Graphics<T> {
                 // Requires Features::CONSERVATIVE_RASTERIZATION
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(depth_stencil_state),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -403,6 +431,8 @@ impl<T: Textures> Graphics<T> {
             indices: vec![],
             textures_bind_group,
             texture_views,
+            depth_texture,
+            depth_texture_view
         }
     }
 
@@ -421,12 +451,30 @@ impl<T: Textures> Graphics<T> {
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
+        if new_size.width == 0 || new_size.height == 0 {
+            return;
         }
+        self.size = new_size;
+        self.config.width = new_size.width;
+        self.config.height = new_size.height;
+        self.surface.configure(&self.device, &self.config);
+
+        self.depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("depth_texture"),
+            size: wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth24PlusStencil8,
+            view_formats: &[],
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+        });
+
+        self.depth_texture_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
     }
 
     pub fn handle_raw_event(&mut self, event: &winit::event::Event<()>) {
@@ -501,6 +549,7 @@ impl<T: Textures> Graphics<T> {
             });
 
         {
+
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -516,7 +565,14 @@ impl<T: Textures> Graphics<T> {
                         store: true,
                     },
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_texture_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
             });
 
             render_pass.set_pipeline(&self.render_pipeline);

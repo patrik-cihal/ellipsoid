@@ -94,6 +94,11 @@ impl<T: Textures> Shape<T> {
         self.texture = t;
         self
     }
+    
+    pub fn reset_texture(mut self) -> Self {
+        self.texture = T::default();
+        self
+    }
 
     pub fn set_color(mut self, c: Color) -> Self {
         self.color = c;
