@@ -61,11 +61,11 @@ impl Color {
         b: 0.,
         a: 0.,
     };
-    pub fn from_rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
+    pub const fn from_rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }
     }
 
-    pub fn from_rgb(r: f32, g: f32, b: f32) -> Self {
+    pub const fn from_rgb(r: f32, g: f32, b: f32) -> Self {
         Self { r, g, b, a: 1.0 }
     }
     pub fn from_hex(hex: u32) -> Self {
@@ -75,7 +75,7 @@ impl Color {
         let a = ((hex >> 24) & 0xFF) as f32 / 255.0;
         Self { r, g, b, a }
     }
-    pub fn set_alpha(mut self, a: f32) -> Self {
+    pub const fn set_alpha(mut self, a: f32) -> Self {
         self.a = a;
         self
     }
