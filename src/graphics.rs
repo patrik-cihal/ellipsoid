@@ -26,6 +26,9 @@ pub trait Textures: IntoEnumIterator + Display + Default + Into<u32> + Copy {
     fn extension(&self) -> image::ImageFormat {
         image::ImageFormat::Png
     }
+    fn folder() -> &'static str {
+        "assets/textures"
+    }
 }
 
 pub type Geometry<T> = (Vec<Vertex<T>>, Vec<u32>);
@@ -184,7 +187,7 @@ impl<T: Textures> Graphics<T> {
             .map(|(i, texture)| {
                 let mut ext = None;
                 for new_ext in texture.extension().extensions_str() {
-                    let path = Path::new("assets/textures").join(format!(
+                    let path = Path::new(&T::folder()).join(format!(
                         "{}.{}",
                         texture.name(),
                         new_ext
