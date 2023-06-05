@@ -201,7 +201,7 @@ impl<T: Textures> Graphics<T> {
                     panic!("Texture {} not found", texture);
                 };
 
-                let path = Path::new("assets/textures").join(format!("{}.{}", texture.name(), ext));
+                let path = Path::new(&T::folder()).join(format!("{}.{}", texture.name(), ext));
 
                 let image_bytes = std::fs::read(path).unwrap();
                 let diffuse_image =
