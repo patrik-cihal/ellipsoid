@@ -2,7 +2,7 @@
 
 Ellipsoid is a Rust graphics library designed to create 2D games in a simple and efficient manner. It provides a wide range of functionality, including window management, rendering, input handling, shape manipulation, and transformations.
 
-Compared to other Rust frameworks like `ggez` or `macroquad`, `ellipsoid` shines in shape creation and manipulation. Additionally texture support is built in through `enums`, which ensures much safer access than for instance using `HashMap`.
+Compared to other Rust frameworks like `ggez` or `macroquad`, `ellipsoid` shines in shape creation and manipulation. Additionally, texture support is built in through `enums`, which ensures much safer access than for instance using `HashMap`.
 
 If you plan to build games in this framework you should expect, that you will hit a wall and at some point have to either make a fork or contribute to the project, since some relevant features are still missing.
 
@@ -125,7 +125,7 @@ Here's a minimal example for creating a simple window with a custom shape:
         async_std::task::block_on(start());
     }
     ```
-3. Add default texture of choice to `assets/textures` (create directory in project root), for me white pixel usually does the trick
+3. Add default texture of choice to `assets/textures` (create a directory in the project root), for me, white pixel usually does the trick, it must be snake case formatted and have .png extension by default (can be changed in the trait specifications), so, in this case, it would be `white.png`
 4. Enjoy the nice rotating green triangle: ![Simple App Screenshot](simple_app_readme_screenshot.png)
 
 
