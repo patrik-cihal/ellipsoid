@@ -125,8 +125,8 @@ Here's a minimal example for creating a simple window with a custom shape:
         async_std::task::block_on(start());
     }
     ```
-3. Add default texture of choice to `assets/textures` (create a directory in the project root), for me, white pixel usually does the trick, it must be snake case formatted and have .png extension by default (can be changed in the trait specifications), so, in this case, it would be `white.png`
-4. Enjoy the nice rotating green triangle: ![Simple App Screenshot](simple_app_readme_screenshot.png)
+3. Add default texture of choice to `assets/textures` (create a directory in the project root), for me, white pixel usually does the trick, it must be formatted based on the EnumdDisplay trait specification, as I've set it to `snake_case`, the name would be: `white.png`
+4. Execute it in the terminal using `cargo run` and enjoy the green triangle: ![Simple App Screenshot](simple_app_readme_screenshot.png)
 
 
 Please refer to the provided Pong game example for a more comprehensive demonstration of Ellipsoid's features and capabilities.
