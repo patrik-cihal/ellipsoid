@@ -3,6 +3,7 @@
 use std::time;
 
 use serde::{Deserialize, Serialize};
+pub use egui_file;
 pub use winit::event::WindowEvent;
 use winit::{
     event::*,

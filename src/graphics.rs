@@ -168,7 +168,7 @@ impl<T: Textures> Graphics<T> {
             .formats
             .iter()
             .copied()
-            .filter(|f| f.describe().srgb)
+            .filter(|f| f.is_srgb())
             .next()
             .unwrap_or(surface_caps.formats[0]);
         let config = wgpu::SurfaceConfiguration {
@@ -231,7 +231,7 @@ impl<T: Textures> Graphics<T> {
 
                 let diffuse_rgba = diffuse_image.to_rgba8().into_raw();
 
-                let bytes_per_pixel = format.describe().block_size as u32;
+                let bytes_per_pixel = format.block_size(None).unwrap();
                 let bytes_per_row = dimensions.0 * bytes_per_pixel;
 
                 queue.write_texture(
@@ -244,8 +244,8 @@ impl<T: Textures> Graphics<T> {
                     &diffuse_rgba,
                     wgpu::ImageDataLayout {
                         offset: 0,
-                        bytes_per_row: std::num::NonZeroU32::new(bytes_per_row),
-                        rows_per_image: std::num::NonZeroU32::new(dimensions.1),
+                        bytes_per_row: Some(bytes_per_row),
+                        rows_per_image: Some(dimensions.1),
                     },
                     texture_size,
                 );
@@ -410,7 +410,7 @@ impl<T: Textures> Graphics<T> {
                 physical_width: size.width as u32,
                 physical_height: size.height as u32,
                 scale_factor: window.scale_factor(),
-                font_definitions: egui::FontDefinitions::default(),
+                font_definitions: Default::default(),
                 style: Default::default(),
             });
 

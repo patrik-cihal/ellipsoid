@@ -98,7 +98,7 @@ impl App<PongTextures> for PongGame {
 
         if self.ball.pos.x + BALL_RADIUS > 1. || self.ball.pos.x - BALL_RADIUS < -1. {
             self.ball.pos = vec2(0., 0.);
-            self.ball.dir = vec2(rand::random(), rand::random()).normalize();
+            self.ball.dir = vec2(rand::random::<f32>()+2., rand::random::<f32>()*2.-1.).normalize();
         }
 
         self.enemy_pos = self.ball.pos.y;
