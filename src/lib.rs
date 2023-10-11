@@ -148,6 +148,7 @@ pub mod prelude {
     pub use crate::{App, Color, GTransform, Geometry, Graphics, Shape, Textures};
     pub use async_trait::async_trait;
     pub use egui;
+    pub use egui_file;
     pub use glam::{self, vec2, Vec2};
     pub use image::ImageFormat;
     pub use winit::{self, event::WindowEvent};

@@ -26,7 +26,7 @@ chrono = "0.4.24"
 glam = "0.23"
 strum = { version = "0.24.1", features = ["derive"] }
 async-trait = "0.1.68"
-egui_file = "0.11.0"
+egui_file = { git="https://github.com/patrik-cihal/egui_file" }
 
 
 [dependencies.image]
