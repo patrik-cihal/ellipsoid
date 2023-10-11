@@ -18,7 +18,7 @@ bytemuck = { version = "1.13.0", features = ["bytemuck_derive", "derive"] }
 anyhow = "1.0.69"
 egui_wgpu_backend = { version = "0.22.0", features = ["web"] }
 egui_winit_platform = { version = "0.18.0", features = ["webbrowser"] }
-egui = "0.21.0"
+egui = "0.23.0"
 epi = "0.17.0"
 getrandom = { version = "0.2", features = ["js"] }
 rand = "0.8.5"
@@ -27,6 +27,7 @@ chrono = "0.4.24"
 glam = "0.23"
 strum = { version = "0.24.1", features = ["derive"] }
 async-trait = "0.1.68"
+egui_file = "0.11.0"
 
 
 [dependencies.image]
