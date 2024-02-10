@@ -27,6 +27,7 @@ glam = "0.23"
 strum = { version = "0.24.1", features = ["derive"] }
 async-trait = "0.1.68"
 egui_file = { git="https://github.com/patrik-cihal/egui_file" }
+ellipsoid-derive = {git = "https://github.com/patrik-cihal/ellipsoid-derive"}
 
 
 [dependencies.image]

@@ -152,4 +152,5 @@ pub mod prelude {
     pub use glam::{self, vec2, Vec2};
     pub use image::ImageFormat;
     pub use winit::{self, event::WindowEvent};
+    pub use ellipsoid_derive::Textures;
 }

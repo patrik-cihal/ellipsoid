@@ -1,4 +1,4 @@
-use std::{fmt::Display, marker::PhantomData, num::NonZeroU32, path::Path};
+use std::{fmt::Display, marker::PhantomData, num::NonZeroU32, path::{Path, PathBuf}};
 
 use glam::{Vec2, Vec3};
 
@@ -14,22 +14,14 @@ pub use shape::Shape;
 mod color;
 pub use color::Color;
 
+mod texture;
+pub use texture::*;
+
 const VERTEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
     1000 * std::mem::size_of::<VertexRaw>() as wgpu::BufferAddress;
 const INDEX_BUFFER_INIT_SIZE: wgpu::BufferAddress =
     300 * std::mem::size_of::<u32>() as wgpu::BufferAddress;
 
-pub trait Textures: IntoEnumIterator + Display + Default + Into<u32> + Copy {
-    fn name(&self) -> String {
-        self.to_string()
-    }
-    fn extension(&self) -> image::ImageFormat {
-        image::ImageFormat::Png
-    }
-    fn folder() -> &'static str {
-        "assets/textures"
-    }
-}
 
 pub type Geometry<T> = (Vec<Vertex<T>>, Vec<u32>);
 
@@ -185,27 +177,9 @@ impl<T: Textures> Graphics<T> {
         let texture_views = T::iter()
             .enumerate()
             .map(|(i, texture)| {
-                let mut ext = None;
-                for new_ext in texture.extension().extensions_str() {
-                    let path = Path::new(&T::folder()).join(format!(
-                        "{}.{}",
-                        texture.name(),
-                        new_ext
-                    ));
-                    if path.exists() {
-                        ext = Some(new_ext);
-                        break;
-                    }
-                }
-                let Some(ext) = ext else {
-                    panic!("Texture {} not found", texture);
-                };
-
-                let path = Path::new(&T::folder()).join(format!("{}.{}", texture.name(), ext));
-
-                let image_bytes = std::fs::read(path).unwrap();
+                let image_bytes = texture.bytes();
                 let diffuse_image =
-                    image::load_from_memory_with_format(&image_bytes, texture.extension()).unwrap();
+                    image::load_from_memory(&image_bytes).unwrap();
 
                 use image::GenericImageView;
                 let dimensions = diffuse_image.dimensions();

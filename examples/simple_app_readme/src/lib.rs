@@ -8,20 +8,12 @@ struct MyApp {
     rotation: f32,
 }
 
-#[derive(Debug, Clone, Copy, EnumIter, Display, Default)]
+#[derive(Debug, Clone, Copy, EnumIter, Display, Default, Textures)]
 #[strum(serialize_all = "snake_case")]
 enum MyTextures {
     #[default]
     White,
 }
-
-impl Into<u32> for MyTextures {
-    fn into(self) -> u32 {
-        self as u32
-    }
-}
-
-impl Textures for MyTextures {}
 
 impl App<MyTextures> for MyApp {
     async fn new(window: winit::window::Window) -> Self {
