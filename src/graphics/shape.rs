@@ -129,7 +129,7 @@ impl<T: Textures> Into<(Vec<Vertex<T>>, Vec<u32>)> for Shape<T> {
         }
 
         for vertex in &mut vertices {
-            vertex.texture = self.texture;
+            vertex.texture = self.texture.clone();
             vertex.color = self.color;
         }
 
