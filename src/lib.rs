@@ -17,7 +17,7 @@ mod graphics;
 pub use graphics::{Color, GTransform, Geometry, Graphics, Shape, Textures};
 
 pub trait App<T: Textures> {
-    async fn new(window: Window) -> Self;
+    fn new(window: Window) -> Self;
     fn graphics(&self) -> &Graphics<T>;
     fn graphics_mut(&mut self) -> &mut Graphics<T>;
     fn input(&mut self, _event: &WindowEvent) -> bool {
@@ -27,7 +27,7 @@ pub trait App<T: Textures> {
     fn draw(&mut self);
 }
 
-pub async fn run<T: Textures, A: App<T> + 'static>() {
+pub fn run<T: Textures, A: App<T> + 'static>() {
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
             std::panic::set_hook(Box::new(console_error_panic_hook::hook));
@@ -59,7 +59,9 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut app = A::new(window).await;
+
+    let mut app = A::new(window);
+
 
     let mut last_update = now();
 
@@ -92,7 +94,6 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
                 app.graphics_mut().update();
                 app.update(dt);
                 app.draw();
-
                 match app.graphics_mut().render() {
                     Ok(_) => {}
                     // Reconfigure the surface if it's lost or outdated
@@ -113,7 +114,6 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             }
             _ => {}
         }
-        yield_now();
     });
 }
 
