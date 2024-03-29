@@ -1,6 +1,6 @@
 #![feature(async_fn_in_trait)]
 
-use std::time;
+use std::{thread::yield_now, time};
 
 use serde::{Deserialize, Serialize};
 pub use winit::event::WindowEvent;
@@ -113,6 +113,7 @@ pub async fn run<T: Textures, A: App<T> + 'static>() {
             }
             _ => {}
         }
+        yield_now();
     });
 }
 
